@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Tarefas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Gerenciador de Tarefas</h1>
+        <form id="form-tarefa">
+            <input type="text" id="input-tarefa" placeholder="Nova tarefa..." required>
+            <button type="submit">Adicionar</button>
+        </form>
+        <ul id="lista-tarefas">
+            </ul>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const listaTarefas = document.getElementById('lista-tarefas');
+            const formTarefa = document.getElementById('form-tarefa');
+            const inputTarefa = document.getElementById('input-tarefa');
+
+            // Função para buscar e exibir as tarefas
+            const fetchTarefas = async () => {
+                const response = await fetch('/tarefas');
+                const tarefas = await response.json();
+                listaTarefas.innerHTML = '';
+                tarefas.forEach(tarefa => {
+                    const li = document.createElement('li');
+                    li.innerHTML = `
+                        <span>${tarefa.titulo}</span>
+                        <button class="btn-excluir" data-id="${tarefa.id}">Excluir</button>
+                    `;
+                    if (tarefa.concluida) {
+                        li.classList.add('concluida');
+                    }
+                    listaTarefas.appendChild(li);
+                });
+            };
+
+            // Função para adicionar uma nova tarefa
+            formTarefa.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const titulo = inputTarefa.value;
+                await fetch('/tarefas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ titulo })
+                });
+                inputTarefa.value = '';
+                fetchTarefas();
+            });
+
+            // Adicionar um ouvinte de eventos para o botão de exclusão
+            listaTarefas.addEventListener('click', async (e) => {
+                if (e.target.classList.contains('btn-excluir')) {
+                    const tarefaId = e.target.dataset.id;
+                    await fetch(`/tarefas/${tarefaId}`, {
+                        method: 'DELETE'
+                    });
+                    fetchTarefas(); // Atualiza a lista após a exclusão
+                }
+            });
+
+            fetchTarefas();
+        });
+    </script>
+</body>
+</html>
